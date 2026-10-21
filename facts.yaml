@@ -1,0 +1,10 @@
+price_per_kg: 0.2         # CHF per kg of biomass
+L: 0.49                   # share of its value an infested tree loses by staying standing
+S: 190                    # CHF, damage to neighbouring trees if an infested tree stays standing
+F: 85                     # CHF, felling one tree and removing it in time
+K: 335                    # trees the crew can fell, per district file
+M: 60                     # further bore-dust checks, per district file
+district_share: 0.085     # share of infested trees among the district trees (aerial survey)
+bore_dust:
+  sensitivity: 0.67       # Pr(dust found | infested)
+  specificity: 0.88       # Pr(no dust | healthy)
