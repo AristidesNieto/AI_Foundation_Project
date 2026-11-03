@@ -102,7 +102,7 @@ Owner = who does the work. Both review the other's steps (step J1).
 - [x] **A5** Scatter plots of `biomass_kg` against `diameter_cm` and against `height_m` (check the power-law shape).
 - [x] **A6** List the problems found in `felled_trees.csv`, with raw-data evidence (row examples).
 - [x] **A7** Write `clean_felled()` in `code/src/bark/clean_felled.py`; check it on `train/` only.
-- [ ] **A8** Write the felled-trees part of report sections 2 and 3.
+- [x] **A8** Write the felled-trees part of report sections 2 and 3. (Draft in `report/felled_sections_2_3_draft.md`; final format waits for the report-tool decision.)
 
 **Aristides — shared columns (proposal, to confirm with Caspar)**
 - [x] **S2** Write `clean_shared()` in `code/src/bark/clean_shared.py`: normalise `aspect`, `crew`, `survey_batch`, and any shared-column placeholders found in A6 and C7. Owned by Aristides, reviewed by Caspar.
@@ -342,6 +342,27 @@ reversed, add a new entry that references the old one):
 - **What:** (1) Save the two fitted models in `code/models/` so `predict.py` can reuse them. (2) `estimate_missing()` raises an error if a row misses both diameter and height. This did not happen in `train/`, but it could in new data; decide how to handle it. (3) Write the felled-trees part of the report (A8). (4) Caspar reviews `clean_shared()` and agrees the schema (S1).
 - **Why:** Needed for `predict.py` and for the report.
 - **Affects:** steps A8, S1, S2, `code/models/`
+
+### 2026-11-03 · Estimators saved to code/models/
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED
+- **What:** The two fitted models (diameter and height) are fitted on `train/` only and saved to `code/models/felled_estimators.joblib` by `code/src/bark/models_io.py`. Reloading gives identical estimates (checked).
+- **Why:** `predict.py` must apply the same models to `test/` and `test_exam/` without refitting. The handout asks for the saved models to be handed in.
+- **Affects:** `code/src/bark/models_io.py`, `code/models/`
+
+### 2026-11-03 · Figures for the felled-trees report section
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED
+- **What:** Four figures in `code/figures/`: `felled_histograms_clean.png`, `felled_biomass_vs_diameter_raw.png`, `felled_biomass_vs_diameter_clean.png`, `felled_height_vs_diameter_clean.png`.
+- **Why:** Figures required by the report (section 2 and 3, captions with labelled axes).
+- **Affects:** `code/figures/`, report sections 2 and 3
+
+### 2026-11-03 · Report draft in Markdown until the tool is chosen
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED (temporary)
+- **What:** The felled-trees text for sections 2 and 3 is in `report/felled_sections_2_3_draft.md`. It will be moved to the final report tool once that is decided (section 7).
+- **Why:** The report tool is still open. A Markdown draft keeps the content and the numbers reviewable now.
+- **Affects:** `report/`, section 7 (open decisions)
 
 ## 9. GitHub workflow guide (read this if you are new to git)
 
