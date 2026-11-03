@@ -95,17 +95,17 @@ Owner = who does the work. Both review the other's steps (step J1).
 - [ ] **S1** Agree the column contract (section 3) and the rule for each shared column. Recorded in `code/src/bark/schema.py`.
 
 **Aristides — `felled_trees.csv`**
-- [ ] **A1** Load `train/felled_trees.csv`; row count, dtypes, missing values per column.
-- [ ] **A2** Summary statistics of numeric columns (count, mean, sd, min, median, max, missing).
-- [ ] **A3** Category counts: `aspect`, `crew`, `survey_batch`.
-- [ ] **A4** Histograms of every numeric column.
-- [ ] **A5** Scatter plots of `biomass_kg` against `diameter_cm` and against `height_m` (check the power-law shape).
-- [ ] **A6** List the problems found in `felled_trees.csv`, with raw-data evidence (row examples).
-- [ ] **A7** Write `clean_felled()` in `code/src/bark/clean_felled.py`; check it on `train/` only.
+- [x] **A1** Load `train/felled_trees.csv`; row count, dtypes, missing values per column.
+- [x] **A2** Summary statistics of numeric columns (count, mean, sd, min, median, max, missing).
+- [x] **A3** Category counts: `aspect`, `crew`, `survey_batch`.
+- [x] **A4** Histograms of every numeric column.
+- [x] **A5** Scatter plots of `biomass_kg` against `diameter_cm` and against `height_m` (check the power-law shape).
+- [x] **A6** List the problems found in `felled_trees.csv`, with raw-data evidence (row examples).
+- [x] **A7** Write `clean_felled()` in `code/src/bark/clean_felled.py`; check it on `train/` only.
 - [ ] **A8** Write the felled-trees part of report sections 2 and 3.
 
 **Aristides — shared columns (proposal, to confirm with Caspar)**
-- [ ] **S2** Write `clean_shared()` in `code/src/bark/clean_shared.py`: normalise `aspect`, `crew`, `survey_batch`, and any shared-column placeholders found in A6 and C7. Owned by Aristides, reviewed by Caspar.
+- [x] **S2** Write `clean_shared()` in `code/src/bark/clean_shared.py`: normalise `aspect`, `crew`, `survey_batch`, and any shared-column placeholders found in A6 and C7. Owned by Aristides, reviewed by Caspar.
 
 **Caspar — `inspected_trees.csv` and `district_trees.csv`**
 - [ ] **C1** Row counts; count infested vs healthy in `inspected_trees.csv` (this gives the **sample share**).
@@ -267,6 +267,81 @@ reversed, add a new entry that references the old one):
 - **What:** Section 9 explains the GitHub workflow step by step for members new to git.
 - **Why:** Caspar has little experience with the GitHub workflow; the guide lets him and his agent follow the same process.
 - **Affects:** section 9
+
+### 2026-11-03 · Findings in felled_trees.csv (step A6)
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED (these are facts from the data, not choices)
+- **What:**
+  1. Diameters in mm for crew B: 136 rows, all of crew B; crew B has no diameter below 100 cm (evidence: crosstab of `crew` vs `diameter_cm > 100`, and the biomass vs diameter scatter, two separate clouds).
+  2. Height placeholder 0: 18 rows, spread over all crews (evidence: crosstab of `crew` vs `height_m == 0`).
+  3. Height missing (NaN): 40 rows, spread over all crews (evidence: `isna()` by crew).
+  4. Impossible diameter 1.6 cm, crew A, row T742819: biomass 85.7 kg and height 15.0 m both match a diameter of about 16 cm (probable decimal error).
+  5. Single outlier check: no other diameter below 5 cm was found.
+- **Why:** Needed for the cleaning rules in A7.
+- **Affects:** step A6, `code/src/bark/clean_felled.py` (A7)
+
+### 2026-11-03 · Impossible diameter estimated, not hand-fixed
+- **Who:** Aristides
+- **Status:** DECIDED
+- **What:** A diameter that is impossible (below a plausible minimum, for example 5 cm) is treated as missing and estimated from the other measurements of the tree, the same way as missing heights. No single row is corrected by hand.
+- **Why:** Hand fixes are forbidden (section 4, rule 6 and the project rules: every rule must be general and work on test/ and test_exam/). Estimating from other measurements uses the handout's instruction "write your best estimate".
+- **Affects:** step A7, `clean_felled()`
+
+### 2026-11-03 · Diameter for crew B divided by 10
+- **Who:** Aristides and Claude (proposed)
+- **Status:** DECIDED (confirmed by Aristides)
+- **What:** Diameters of crew B are divided by 10 (mm to cm).
+- **Why:** Finding 1 above. Evidence: the B-only values after dividing fall into the same cloud as the other crews.
+- **Affects:** step A7, `clean_felled()`
+
+### 2026-11-03 · Height placeholder 0 treated as missing
+- **Who:** Aristides and Claude (proposed)
+- **Status:** DECIDED (confirmed by Aristides)
+- **What:** Height 0 is treated as missing, then estimated like the other missing heights (method to be decided, likely a regression on diameter, class material week 4).
+- **Why:** Finding 2 above; a tree cannot be 0 m tall.
+- **Affects:** step A7, `clean_felled()`
+
+### 2026-11-03 · Findings: aspect spellings in felled_trees.csv (step A3)
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED (fact from the data)
+- **What:** The `aspect` column uses several spellings for the same directions: `S`, `South`, `s`, `SÜD` (for south). Counts before cleaning: E 190, W 105, S 92, N 50, South 40, s 36, SÜD 27.
+- **Why:** Same category written in different ways is a typical field-data problem (handout, Task 1).
+- **Affects:** step A3, `code/src/bark/clean_shared.py`
+
+### 2026-11-03 · Aspect spellings mapped to N, E, S, W (shared rule)
+- **Who:** Aristides (proposed), Caspar to review
+- **Status:** PROPOSED
+- **What:** `clean_shared()` removes spaces, uses upper case, and maps every known spelling to N, E, S or W (`ASPECT_MAP`). Unknown spellings become missing. After the mapping, `S` has 195 rows in `train/felled_trees.csv`.
+- **Why:** The rule must be identical for all three files, so it belongs to the shared cleaning.
+- **Affects:** `code/src/bark/clean_shared.py`, step S2
+
+### 2026-11-03 · Impossible diameter threshold: 5 cm
+- **Who:** Aristides
+- **Status:** DECIDED
+- **What:** Diameters below 5 cm are treated as impossible and become missing (`MIN_PLAUSIBLE_DIAMETER_CM = 5.0`). In `train/` the smallest valid diameter after the crew B fix is 12.5 cm, so 5 cm separates the impossible value (1.6 cm) from real trees with a wide margin.
+- **Why:** Rule 3 of `clean_felled()`, agreed in the decision "Impossible diameter estimated, not hand-fixed".
+- **Affects:** `code/src/bark/clean_felled.py`
+
+### 2026-11-03 · Missing diameters and heights estimated with linear models on the logarithms
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED
+- **What:** Two linear regressions on the logarithms, fitted only on rows with diameter, height and biomass observed in `train/`. Diameter model: log(diameter) from log(height) and log(biomass). Height model: log(height) from log(diameter) and log(biomass). Diameter is estimated first, because the height model uses it. R² on the fit data: about 0.97 (diameter), 0.90 (height). The 58 height values and 1 diameter value are filled this way.
+- **Why:** The biomass relation is a power law (Task 2), so its logarithm is linear. Using biomass as input uses information that is observed for every felled tree. Fitting only on observed rows avoids using estimated values to fit the model.
+- **Affects:** `code/src/bark/clean_felled.py` (`fit_estimators`, `estimate_missing`), notebook `01_eda_felled_aristides.ipynb`
+
+### 2026-11-03 · Estimation lives in the module, not only in the notebook
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED
+- **What:** `fit_estimators()` and `estimate_missing()` are in `clean_felled.py`, and the notebook calls them. The notebook and `predict.py` must use the same code.
+- **Why:** `predict.py` has to apply the same fitted models to `test/` and `test_exam/`, without refitting.
+- **Affects:** `code/src/bark/clean_felled.py`, notebook
+
+### 2026-11-03 · Open items after step A7
+- **Who:** Aristides
+- **Status:** PROPOSED (to do next)
+- **What:** (1) Save the two fitted models in `code/models/` so `predict.py` can reuse them. (2) `estimate_missing()` raises an error if a row misses both diameter and height. This did not happen in `train/`, but it could in new data; decide how to handle it. (3) Write the felled-trees part of the report (A8). (4) Caspar reviews `clean_shared()` and agrees the schema (S1).
+- **Why:** Needed for `predict.py` and for the report.
+- **Affects:** steps A8, S1, S2, `code/models/`
 
 ## 9. GitHub workflow guide (read this if you are new to git)
 
