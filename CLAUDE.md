@@ -364,6 +364,18 @@ reversed, add a new entry that references the old one):
 - **Why:** The report tool is still open. A Markdown draft keeps the content and the numbers reviewable now.
 - **Affects:** `report/`, section 7 (open decisions)
 
+### 2026-11-03 · Session handoff (Aristides, end of session)
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED (state at the end of the session)
+- **What:**
+  - **Done on branch `aristides`:** A1–A8 and S2 (felled trees, aspect rule), saved estimators, figures, report draft for sections 2 and 3 (felled part). Last commit `bcaba60`, pushed.
+  - **Not started:** Caspar's part (C1–C9, J1–J3) and S1 (schema agreement). Caspar has not started yet, so nothing is blocked on him for now.
+  - **Open decision:** report tool (LaTeX, Typst or Word). The draft is in Markdown until then.
+  - **Open technical item:** `estimate_missing()` raises an error if a row misses both diameter and height. It does not happen in `train/`. Decide the handling before the pipeline is final.
+  - **Next session, suggested order:** (1) decide the report tool; (2) decide the missing-both case; (3) start `predict.py` (load `felled_estimators.joblib` and run the cleaning on any district file); (4) Caspar starts C1 on his branch.
+- **Why:** So that the next session, human or agent, starts from the right place without re-reading the whole history.
+- **Affects:** section 5 (status), section 7 (open decisions)
+
 ## 9. GitHub workflow guide (read this if you are new to git)
 
 Repository: `https://github.com/AristidesNieto/AI_Foundation_Project`
