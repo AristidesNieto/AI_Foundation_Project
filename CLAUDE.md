@@ -108,15 +108,15 @@ Owner = who does the work. Both review the other's steps (step J1).
 - [x] **S2** Write `clean_shared()` in `code/src/bark/clean_shared.py`: normalise `aspect`, `crew`, `survey_batch`, and any shared-column placeholders found in A6 and C7. Owned by Aristides, reviewed by Caspar.
 
 **Caspar — `inspected_trees.csv` and `district_trees.csv`**
-- [ ] **C1** Row counts; count infested vs healthy in `inspected_trees.csv` (this gives the **sample share**).
-- [ ] **C2** Summary statistics of numeric columns for both files; missing values; value counts of `bore_dust` in `district_trees.csv`.
-- [ ] **C3** Category counts `aspect`, `crew`, `survey_batch` for both files.
-- [ ] **C4** Map of inspected trees (`east` vs `north`), coloured by `infested`.
-- [ ] **C5** Correlation matrix of the numeric columns of `inspected_trees.csv`.
-- [ ] **C6** Box plots of tree and site properties for infested vs healthy trees.
-- [ ] **C7** List problems in both files, with raw-data evidence, including any encoding problems in `infested` and `bore_dust`.
-- [ ] **C8** Write `clean_inspected()` (`code/src/bark/clean_inspected.py`) and `clean_district()` (`code/src/bark/clean_district.py`); check on `train/` only.
-- [ ] **C9** Write the inspected/district part of report sections 2 and 3.
+- [x] **C1** Row counts; count infested vs healthy in `inspected_trees.csv` (this gives the **sample share**).
+- [x] **C2** Summary statistics of numeric columns for both files; missing values; value counts of `bore_dust` in `district_trees.csv`.
+- [x] **C3** Category counts `aspect`, `crew`, `survey_batch` for both files.
+- [x] **C4** Map of inspected trees (`east` vs `north`), coloured by `infested`.
+- [x] **C5** Correlation matrix of the numeric columns of `inspected_trees.csv`.
+- [x] **C6** Box plots of tree and site properties for infested vs healthy trees.
+- [x] **C7** List problems in both files, with raw-data evidence, including any encoding problems in `infested` and `bore_dust`.
+- [x] **C8** Write `clean_inspected()` (`code/src/bark/clean_inspected.py`) and `clean_district()` (`code/src/bark/clean_district.py`); check on `train/` only.
+- [x] **C9** Write the inspected/district part of report sections 2 and 3.
 
 **Joint (both)**
 - [ ] **J1** Review each other's EDA and cleaning rules (read the notebooks and functions, ask questions).
@@ -176,6 +176,13 @@ reversed, add a new entry that references the old one):
 ```
 
 ### Log
+
+### 2026-11-13 · Tasks C1-C9 finished
+- **Who:** Caspar
+- **Status:** DECIDED
+- **What:** Open tasks for Caspar (step 1 of project) fulfilled
+- **Why:** To accelerate the progress of the project
+- **Affects:** `01_eda_inspected_district_caspar.ipynb`
 
 ### 2026-11-03 · Project context file is CLAUDE.md
 - **Who:** Aristides
