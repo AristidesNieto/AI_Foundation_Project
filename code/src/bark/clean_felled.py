@@ -8,35 +8,21 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-# A diameter below this value is impossible for a spruce in this data (A6, finding 4).
-MIN_PLAUSIBLE_DIAMETER_CM = 5.0
+from bark.clean_shared import MIN_PLAUSIBLE_DIAMETER_CM, clean_shared  # noqa: F401 (re-exported)
 
 
 def clean_felled(df: pd.DataFrame) -> pd.DataFrame:
     """Apply the repair rules to felled_trees. Missing values are NOT estimated here.
 
-    Rules, in this order:
-    1. Crew B measured diameters in millimetres, so divide them by 10.
-    2. A height of exactly 0 means "not measured", so replace it with NaN.
-    3. A diameter below MIN_PLAUSIBLE_DIAMETER_CM is impossible, so replace it with NaN.
+    The diameter and height rules (crew in mm, height 0, impossible values) used to
+    live here. They are the same problems in all three files, so they moved to
+    clean_shared.clean_measurements(). On train/felled_trees.csv the result is
+    identical to the old rules (checked). felled_trees has no felled-only problem
+    yet; add one here if one is found.
     """
-    # Work on a copy, so the caller's DataFrame is never changed.
-    out = df.copy()
-
-    # Rule 1: crew B's diameters are in mm.
-    # np.where(condition, value_if_true, value_if_false) decides row by row:
-    # crew B rows are divided by 10, all other rows keep their value.
-    is_crew_b = out["crew"] == "B"
-    out["diameter_cm"] = np.where(is_crew_b, out["diameter_cm"] / 10, out["diameter_cm"])
-
-    # Rule 2: height 0 is a placeholder, not a real height.
-    # .loc[rows, column] = value changes only the rows that match the condition.
-    out.loc[out["height_m"] == 0, "height_m"] = np.nan
-
-    # Rule 3: impossible diameters (too small to be a spruce in this data) become missing.
-    out.loc[out["diameter_cm"] < MIN_PLAUSIBLE_DIAMETER_CM, "diameter_cm"] = np.nan
-
-    return out
+    # clean_shared is idempotent, so callers that already ran it (the notebook does
+    # clean_felled(clean_shared(df))) get the same result.
+    return clean_shared(df)
 
 
 def fit_estimators(cleaned: pd.DataFrame) -> dict:

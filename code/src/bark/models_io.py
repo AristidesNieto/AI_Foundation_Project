@@ -11,6 +11,9 @@ import joblib
 # Default location of the saved felled-trees estimators (handout: hand in the saved models).
 FELLED_ESTIMATORS_PATH = Path(__file__).resolve().parents[2] / "models" / "felled_estimators.joblib"
 
+# Size estimators for trees without biomass (inspected, district), see estimate_size.py.
+SIZE_ESTIMATORS_PATH = Path(__file__).resolve().parents[2] / "models" / "size_estimators.joblib"
+
 
 def save_estimators(models: dict, path: Path = FELLED_ESTIMATORS_PATH) -> None:
     """Write the fitted models dict (from fit_estimators) to a joblib file."""
