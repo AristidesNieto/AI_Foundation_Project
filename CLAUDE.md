@@ -116,10 +116,10 @@ Owner = who does the work. Both review the other's steps (step J1).
 - [x] **C6** Box plots of tree and site properties for infested vs healthy trees.
 - [x] **C7** List problems in both files, with raw-data evidence, including any encoding problems in `infested` and `bore_dust`.
 - [x] **C8** Write `clean_inspected()` (`code/src/bark/clean_inspected.py`) and `clean_district()` (`code/src/bark/clean_district.py`); check on `train/` only.
-- [x] **C9** Write the inspected/district part of report sections 2 and 3.
+- [x] **C9** Write the inspected/district part of report sections 2 and 3. (Notebook text exists; needs numbers and the evidence table before it goes into the report, see log 2026-11-24.)
 
 **Joint (both)**
-- [ ] **J1** Review each other's EDA and cleaning rules (read the notebooks and functions, ask questions).
+- [ ] **J1** Review each other's EDA and cleaning rules (read the notebooks and functions, ask questions). Aristides → Caspar done 2026-11-24 (fixes applied, notes in the code); Caspar → Aristides still open.
 - [ ] **J2** Integrate: one function that cleans all three files and returns the felling-list columns; confirm no missing values remain.
 - [ ] **J3** Each member writes their own 2–3 sentence Task 1 discussion.
 
@@ -382,6 +382,48 @@ reversed, add a new entry that references the old one):
   - **Next session, suggested order:** (1) decide the report tool; (2) decide the missing-both case; (3) start `predict.py` (load `felled_estimators.joblib` and run the cleaning on any district file); (4) Caspar starts C1 on his branch.
 - **Why:** So that the next session, human or agent, starts from the right place without re-reading the whole history.
 - **Affects:** section 5 (status), section 7 (open decisions)
+
+### 2026-11-24 · J1 review of Caspar's C1–C9: problems found
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED (facts from `train/`)
+- **What:** (1) `clean_inspected.py` / `clean_district.py` were still stubs; the functions existed only in the notebook. (2) Crew B diameters in mm also in inspected (141 rows) and district (924 rows). (3) Missed: diameters in mm in other crews (1 + 9 rows, 174–589), heights in dm (1 + 10 rows, 179–373 m), heights 1.7–4.0 m (9 district rows), diameters < 5 cm (1 + 2 rows). After /10 resp. as listed, the height/diameter ratio of each rescaled row lies in the felled range 0.6–1.3. (4) Heights were filled with `interpolate()` (row-order dependent). (5) C1 printed yes/no = 0.739 with a reversed label; sample share is 255/600 = 0.425. (6) Notebook was in the repo root and depended on Colab.
+- **Why:** These would have broken Task 3 (wrong diameters as model input) and Task 5 (wrong `V`).
+- **Affects:** steps C7, C8, C9, J1
+
+### 2026-11-24 · Measurement rules moved into clean_shared()
+- **Who:** Aristides (with Claude); Caspar to review
+- **Status:** DECIDED (agreed by Aristides; Caspar can reopen in J1)
+- **What:** `clean_shared()` = `clean_aspect()` + `clean_measurements()`. Rules: crew with median diameter > 100 → all its diameters /10; single diameter > 100 → /10; height > 60 → /10; height 0 → NaN; anything still outside [5, 100] cm or [5, 60] m → NaN. The crew rule uses the median, not the name "B", so it generalises. `clean_felled()` now just calls `clean_shared()`; its output on `train/felled_trees.csv` and the saved felled estimators are unchanged (checked). All rules are idempotent.
+- **Why:** The same problems occur in all three files; one rule set avoids divergence. Supersedes the crew-B-by-name rule in "Diameter for crew B divided by 10" (same result on train).
+- **Affects:** `code/src/bark/clean_shared.py`, `code/src/bark/clean_felled.py`
+
+### 2026-11-24 · Too-small values: missing + estimate, not ×10
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED (can be revisited)
+- **What:** Heights below 5 m and diameters below 5 cm become NaN and are estimated, consistent with the earlier decision "Impossible diameter estimated, not hand-fixed". Note: the evidence suggests they are decimal errors (×10 would fit the ratio), so ×10 is a possible alternative.
+- **Why:** Keep one consistent rule with the existing felled decision; the estimate is close anyway.
+- **Affects:** `clean_measurements()` rule 5
+
+### 2026-11-24 · Size estimator for trees without biomass
+- **Who:** Aristides (with Claude)
+- **Status:** DECIDED
+- **What:** `code/src/bark/estimate_size.py`: log(height) ~ log(diameter) and log(diameter) ~ log(height), fitted on the 4154 `train/` rows (all three cleaned files) with both observed (R² 0.87). Both missing → train medians (29.5 cm, 26.1 m). Saved to `code/models/size_estimators.joblib`. After cleaning + estimation, `east, north, aspect, diameter_cm, height_m` have no NaN in inspected and district train files.
+- **Why:** Inspected and district have no biomass, so the felled estimators cannot be used. Replaces `interpolate()`. Also settles the "missing both" case for these files (the felled estimator still raises; open).
+- **Affects:** `estimate_size.py`, `models_io.py`, `code/models/`
+
+### 2026-11-24 · clean_inspected / clean_district written into the package
+- **Who:** Aristides (with Claude), on Caspar's files with Aristides' go-ahead; Caspar to review
+- **Status:** DECIDED
+- **What:** `clean_inspected()`: shared rules + `infested` → 1/0 (unknown → NaN), plus `sample_share()`. `clean_district()`: shared rules + `bore_dust` → "found" / "not found" / NaN (= not checked; was the string "missing"). Each file starts with "Review notes for Caspar". The notebook moved to `code/notebooks/01_eda_inspected_district_caspar.ipynb` (local paths, no Colab, review cells, C8 cell uses the package, original code kept as comments) and was re-run.
+- **Why:** So `predict.py` can use them; review notes let Caspar see what changed and why.
+- **Affects:** `clean_inspected.py`, `clean_district.py`, notebook, steps C8, J1
+
+### 2026-11-24 · Still open after the review
+- **Who:** Aristides
+- **Status:** PROPOSED
+- **What:** (1) Caspar reviews Aristides' part and these fixes (J1). (2) C9 text needs numbers, English plot labels and the evidence table before going into the report. (3) J2: one function that cleans all three files (now mostly a call to `clean_*` + `estimate_*`). (4) Felled "missing both" case. (5) Task 2 can start now.
+- **Why:** Hand-off.
+- **Affects:** section 5
 
 ## 9. GitHub workflow guide (read this if you are new to git)
 
