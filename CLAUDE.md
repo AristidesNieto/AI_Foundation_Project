@@ -80,7 +80,7 @@ backed by evidence from the raw data, and the cleaning must be **rule-based and 
 8. **Do not commit or push** without the user's explicit go-ahead. Git is shared, so both members
    check with each other before pushing.
 
-## 5. Task 1 — Explore and clean (current work)
+## 5. Task 1 — Explore and clean (finishing: J1–J3; Tasks 2–5 are in section 5b)
 
 **Deliverables of Task 1:** cleaning code that the script applies to every new file; the cleaned
 columns of `felling_list.csv`; report sections 2 (exploratory data analysis) and 3 (data problems
@@ -126,6 +126,77 @@ Owner = who does the work. Both review the other's steps (step J1).
 ### Status
 
 Update the checkboxes above as steps are finished, and say who did them in the commit message.
+
+## 5b. Tasks 2–5 — Models, Bayes, decisions (current work)
+
+**Split rule (same as Task 1):** each member continues with the data they cleaned.
+Aristides: Task 2 (felled → `biomass_kg`, `V`) and Task 5 (decisions, uses `V`).
+Caspar: Task 3 (inspected → `p_model`) and Task 4 (Bayes, follows directly from `p_model`).
+Both: integration into `predict.py`, `test/` comparison, report assembly. Each member must still
+be able to explain the other's tasks in the oral (section 1), so the cross-review (J-steps) is part of the work.
+
+**Order and dependencies:** Task 2 and Task 3 run in parallel. Task 4 needs `p_model` (can be built
+and tested with a dummy `p_model` first). Task 5 needs `V` and `p` (can be built with dummy values first).
+C19 (tree diagram) needs the check list from A19. Class material: Task 2 W4, W6, W7, W11; Task 3 W7–W9;
+Task 4 W2–W3; Task 5 W2, W3, W9.
+
+### Interfaces (agree before coding, so both can work in parallel)
+
+All functions take cleaned DataFrames (after `clean_*` + `estimate_*`) and never read files.
+Fitted models are saved in `code/models/` via `models_io.py`; `predict.py` only loads them.
+
+| Function | Module | Returns | Owner |
+|---|---|---|---|
+| `predict_biomass(df, model)` | `bark/biomass.py` | biomass in kg per row (Series) | Aristides |
+| `predict_p_model(df, model)` | `bark/infestation.py` | `p_model` per row (Series) | Caspar |
+| `compute_p_prior(p_model, sample_share, district_share)` | `bark/bayes.py` | `p_prior` | Caspar |
+| `compute_p(p_prior, bore_dust, sensitivity, specificity)` | `bark/bayes.py` | `p` (= `p_prior` where `bore_dust` is NaN) | Caspar |
+| `decide_fell(p, V, facts)` | `bark/decide.py` | `fell` 0/1 | Aristides |
+| `check_values(p, V, bore_dust, facts)` | `bark/decide.py` | value of a check in CHF per tree | Aristides |
+
+- `predict.py` gets only the district file and `facts.yaml`. So the **sample share** (0.425 on `train/`)
+  and, for the kNN feature, the **coordinates and labels of all inspected `train/` trees** must be saved
+  with the infestation model, not recomputed from a file.
+- `V = biomass_kg × price_per_kg` (from `facts.yaml`), computed in `predict.py`.
+
+### Work split
+
+**Aristides — Task 2, timber value `V`** (notebook `02_biomass_aristides.ipynb`, module `bark/biomass.py`)
+- [ ] **A9** Two linear models: raw values and logarithms (power law). Residual plots of both; residuals against the other columns.
+- [ ] **A10** 5-fold CV RMSE in kg (log model: `exp` back-transform before the RMSE). Baseline: mean biomass of the felled trees.
+- [ ] **A11** Does a site property help? CV RMSE with and without (`altitude_m`, `water_deficit_mm`, `spruce_share`, `aspect`).
+- [ ] **A12** Compare district vs felled diameters and heights; list the district trees where the model must extrapolate.
+- [ ] **A13** Random forest (fixed `random_state`). Plot both models' predictions against diameter for the district trees; where do they disagree, which one to trust.
+- [ ] **A14** Choose the model, fit on all `train/` felled trees, save `models/biomass_model.joblib`, write `predict_biomass()`.
+- [ ] **A15** Report section 4 + 2–3 sentence discussion.
+
+**Caspar — Task 3, infestation probability `p_model`** (notebook `03_infestation_caspar.ipynb`, module `bark/infestation.py`)
+- [ ] **C10** Logistic regression on standardized features (no `class_weight`). Odds ratios exp(w); read them with the correlations from C5.
+- [ ] **C11** kNN on the coordinates for several k; mean 5-fold CV log-loss per k; choose k.
+- [ ] **C12** kNN feature (share of infested among the k nearest inspected trees): `cross_val_predict` for inspected trees; all `train/` inspected trees as neighbours for district trees.
+- [ ] **C13** Evaluate each model with CV: confusion matrix, precision and recall at 0.5, ROC/AUC, log-loss. Baseline: every tree gets the sample share.
+- [ ] **C14** Calibration plot per model (5 bins, with tree counts per bin), using `cross_val_predict(..., method='predict_proba')`.
+- [ ] **C15** Choose the model, fit on all `train/` inspected trees, save `models/infestation_model.joblib` (with sample share and neighbour data), write `predict_p_model()`.
+- [ ] **C16** Report section 5 + 2–3 sentence discussion.
+
+**Caspar — Task 4, Bayes correction** (module `bark/bayes.py`)
+- [ ] **C17** `compute_p_prior()` (Step 1). Answer the handout question: what happens at `p_model` = 0 or 1, and can our model output that?
+- [ ] **C18** `compute_p()` (Step 2) with sensitivity and specificity from `facts.yaml`; trees without a check keep `p_prior`.
+- [ ] **C19** Tree diagram with numbers for one tree of the check list (needs A19); discussion whether bore dust depends only on infestation (weather, crew, old bark). Report section 6 + discussion.
+
+**Aristides — Task 5, decisions and field checks** (notebook `05_decision_aristides.ipynb`, module `bark/decide.py`)
+- [ ] **A16** Felling rule p × (L × V + S) > F, at most K trees (if more qualify: keep the K with the largest expected net saving — to confirm). Number felled; expected net saving.
+- [ ] **A17** Expected-loss table (4 boxes, as in the handout example).
+- [ ] **A18** What-if: `district_share` × 2 and F × 1.5, without refitting Tasks 2–3; compare count, trees joining/leaving, net saving.
+- [ ] **A19** Value of a bore-dust check per unchecked tree; top M to `check_list.csv`; explain the ranking.
+- [ ] **A20** One map: felled trees and trees to check.
+- [ ] **A21** Report section 7 + 2–3 sentence discussion.
+
+**Joint (both)**
+- [ ] **J4** `predict.py` end to end (Aristides writes, Caspar reviews): read district file + facts, clean, estimate, biomass, `V`, `p_model`, `p_prior`, `p`, `fell`, check list; write both CSVs unrounded; no NaN; runs on `train/district_trees.csv`.
+- [ ] **J5** Cross-review of Tasks 2–5 (each reads the other's notebook and module, asks questions).
+- [ ] **J6** Only after the pipeline is final: run on `test/`, write report section 8 (`test/` vs `train/`).
+- [ ] **J7** Report sections 1 (recommendation), 9 (limitations), 10 (AI use); final 8-page PDF.
 
 ## 6. Conventions
 
@@ -424,6 +495,27 @@ reversed, add a new entry that references the old one):
 - **What:** (1) Caspar reviews Aristides' part and these fixes (J1). (2) C9 text needs numbers, English plot labels and the evidence table before going into the report. (3) J2: one function that cleans all three files (now mostly a call to `clean_*` + `estimate_*`). (4) Felled "missing both" case. (5) Task 2 can start now.
 - **Why:** Hand-off.
 - **Affects:** section 5
+
+### 2026-11-24 · PR #3 merged without Caspar's review
+- **Who:** Aristides
+- **Status:** DECIDED
+- **What:** PR #3 (J1 review fixes) was merged into `main` by Aristides directly, without waiting for Caspar's review, so Tasks 2–5 can start. Caspar should still read the changes (review notes in `clean_inspected.py`, `clean_district.py`, the notebook and the log entries above) and can reopen any rule.
+- **Why:** Unblock the next tasks. Deviation from section 6 (other member reviews before merge), recorded here.
+- **Affects:** section 6, J1
+
+### 2026-11-24 · Tasks 2–5 split
+- **Who:** Aristides (proposed, with Claude); Caspar to confirm
+- **Status:** PROPOSED
+- **What:** Same rule as Task 1, each continues with the data they cleaned: Aristides Task 2 (A9–A15) and Task 5 (A16–A21); Caspar Task 3 (C10–C16) and Task 4 (C17–C19); both J4–J7. Interfaces between modules fixed in section 5b so both can work in parallel.
+- **Why:** Task 2 uses felled data (Aristides' Task 1 part), Task 3 uses inspected data (Caspar's part); Task 4 follows from `p_model`, Task 5 from `V`. Balanced load, and Task 2/3 can run at the same time.
+- **Affects:** section 5b
+
+### 2026-11-24 · Deadline and timeline
+- **Who:** Aristides (proposed); Caspar to confirm
+- **Status:** PROPOSED
+- **What:** Presentation and submission: **Wednesday 2026-12-16**. Team goal: finish about one week earlier (**2026-12-09**), the last week only for oral preparation. Timeline: by 12-01 Task 2 + Task 3 done, Task 1 leftovers (S1, J1, J2, J3) closed; by 12-04 Task 4 + Task 5 + `predict.py` (J4) run end to end on `train/`; by 12-08 cross-review (J5), `test/` comparison (J6), report draft (J7); 12-09 final PDF; 12-09 to 12-16 oral prep (each explains the whole pipeline).
+- **Why:** 31 steps left in about 15 days; Task 1 took three weeks, so the pace must about double, with Tasks 2 and 3 in parallel.
+- **Affects:** sections 5, 5b
 
 ## 9. GitHub workflow guide (read this if you are new to git)
 
